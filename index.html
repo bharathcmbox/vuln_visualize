@@ -85,7 +85,24 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 label.ctl{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
 label.ctl input[type=range]{width:120px;accent-color:var(--accent)}
 input.txt{font:15px var(--mono);border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:7px 10px;border-radius:9px;width:130px}
-.tl{position:relative;height:150px;margin:8px 4px 0}
+/* timeline: equal-spaced event cards + proportional wall-clock bar */
+.tl2{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 20px}
+.ev{position:relative;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:10px 12px;transition:all .2s}
+.ev .et{font:700 14px var(--mono);letter-spacing:-.02em}
+.ev .el{font-size:12.5px;color:var(--muted);line-height:1.35;margin-top:3px}
+.ev .edot{position:absolute;top:-6px;left:14px;width:11px;height:11px;border-radius:50%;background:var(--border);border:2px solid var(--surface)}
+.ev.reached{border-color:var(--accent);background:var(--accent-soft)}
+.ev.reached .edot{background:var(--accent)}
+.ev.kill.reached{border-color:var(--ok);background:var(--ok-soft)}
+.ev.kill.reached .edot{background:var(--ok)}
+.ev.cur{box-shadow:0 0 0 2px var(--accent)}
+@media (max-width:640px){.tl2{grid-template-columns:1fr 1fr}.ev .el{font-size:11.5px}}
+.wallwrap{margin:2px 2px 4px}
+.walllabel{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+.wall{position:relative;height:16px;border-radius:8px;background:var(--surface-2);overflow:hidden;border:1px solid var(--border)}
+.wall-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--accent-soft),var(--accent));border-radius:8px}
+.wall-head{position:absolute;top:-3px;width:4px;height:22px;border-radius:3px;background:var(--text);left:0;transform:translateX(-2px)}
+.wallticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:5px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
 .stat{background:var(--surface-2);border-radius:10px;padding:10px 12px}
 .stat .v{font:700 20px var(--mono);letter-spacing:-.02em}
@@ -183,13 +200,17 @@ footer a{color:var(--accent)}
   </div>
 
   <div class="panel">
-    <h3 class="ph">Detected in minutes, stopped in hours — drag the scrubber</h3>
-    <div class="tl" id="dnsTl"></div>
+    <h3 class="ph">Detected in minutes, stopped in hours — press Play, or drag the scrubber</h3>
+    <div class="tl2" id="dnsEvents" aria-hidden="true"></div>
+    <div class="wallwrap">
+      <div class="walllabel"><span>wall-clock elapsed</span><span class="mono" id="dnsClock">T+0:00</span></div>
+      <div class="wall"><div class="wall-fill" id="dnsFill"></div><div class="wall-head" id="dnsHead"></div></div>
+      <div class="wallticks"><span>0 min</span><span>detection window</span><span>164 min</span></div>
+    </div>
     <div class="controls">
-      <label class="ctl" style="flex:1;min-width:240px">
-        <input type="range" id="dnsRange" min="0" max="164" value="0" step="1" style="width:100%" aria-label="Minutes since the external DNS response">
-      </label>
-      <div class="stat" style="min-width:150px"><div class="v" id="dnsClock">T+0:00</div><div class="k" id="dnsState">external DNS response</div></div>
+      <button class="btn primary" id="dnsPlay">▶ Play</button>
+      <input type="range" id="dnsRange" min="0" max="1640" value="0" step="1" style="flex:1;min-width:220px;accent-color:var(--accent)" aria-label="Scrub the incident timeline, 0 to 164 minutes">
+      <div class="stat" style="min-width:190px"><div class="v" id="dnsState" style="font-size:15px">External DNS response</div><div class="k">current state</div></div>
     </div>
     <div class="callout">The monitor fired a P0 alert ~11.8 min in and a human acknowledged it ~14.7 min in — but the run kept going until someone killed it by hand at ~164 min. <strong>The detector worked; the automatic stop didn't.</strong> A separate DNS detector had been excluded from this environment, and earlier external hits were scored too low because a failed lookup looked like a failed escape.</div>
   </div>
@@ -411,40 +432,67 @@ footer a{color:var(--accent)}
 <script>
 /* ================= 01 · DNS timeline ================= */
 (function(){
-  var tl=document.getElementById('dnsTl'),rng=document.getElementById('dnsRange'),
-      clk=document.getElementById('dnsClock'),st=document.getElementById('dnsState');
+  var evBox=document.getElementById('dnsEvents'),rng=document.getElementById('dnsRange'),
+      clk=document.getElementById('dnsClock'),st=document.getElementById('dnsState'),
+      fill=document.getElementById('dnsFill'),head=document.getElementById('dnsHead'),
+      play=document.getElementById('dnsPlay');
+  var MAX=164; // minutes
+  // events: m = minutes since external DNS response
   var ev=[
-    {m:0,  l:'External DNS response',   c:'var(--danger)', up:false},
-    {m:11.8,l:'P0 alert fired',         c:'var(--accent)', up:true},
-    {m:14.7,l:'Human acknowledged',     c:'var(--accent)', up:false},
-    {m:164, l:'Run killed by hand',     c:'var(--ok)',     up:true}
+    {m:0,    t:'T+0:00',   l:'External DNS response',  state:'External DNS response — the escape begins'},
+    {m:11.8, t:'T+11:48',  l:'P0 alert fired',          state:'P0 alert fired — detection worked'},
+    {m:14.7, t:'T+14:42',  l:'Human acknowledged',      state:'Acknowledged by a human — but the run keeps going',cls:''},
+    {m:164,  t:'T+164:00', l:'Run killed by hand',      state:'Killed by hand — ~2.5 hours after detection',cls:'kill'}
   ];
-  var MAX=164;
-  function pct(m){return (m/MAX)*100;}
-  function build(){
-    var h='<div class="bar"></div>';
-    h+='<div class="gap" id="dnsGap" style="left:0;width:0;background:var(--danger-soft)"></div>';
-    ev.forEach(function(e,i){
-      var left=pct(e.m);
-      var cls='mk'+(e.up?' up':'');
-      h+='<div class="'+cls+'" style="left:'+left+'%">';
-      if(e.up){h+='<div class="dot" style="background:'+e.c+'"></div><div class="t">T+'+fmt(e.m)+'</div><div class="l">'+e.l+'</div>';}
-      else{h+='<div class="t">T+'+fmt(e.m)+'</div><div class="l">'+e.l+'</div><div class="dot" style="background:'+e.c+'"></div>';}
-      h+='</div>';
+  // build the four equal-spaced event cards
+  evBox.innerHTML=ev.map(function(e){
+    return '<div class="ev '+(e.cls||'')+'" data-m="'+e.m+'"><div class="edot"></div>'+
+           '<div class="et">'+e.t+'</div><div class="el">'+e.l+'</div></div>';
+  }).join('');
+  var cards=evBox.querySelectorAll('.ev');
+
+  function render(mins){
+    var pct=Math.max(0,Math.min(100,(mins/MAX)*100));
+    fill.style.width=pct+'%';head.style.left=pct+'%';
+    // clock
+    var tot=Math.round(mins*60),mm=Math.floor(tot/60),ss=tot%60;
+    clk.textContent='T+'+mm+':'+(ss<10?'0':'')+ss;
+    // reached / current highlighting
+    var curIdx=0;
+    ev.forEach(function(e,i){if(mins+1e-6>=e.m)curIdx=i;});
+    cards.forEach(function(c,i){
+      c.classList.toggle('reached',mins+1e-6>=ev[i].m);
+      c.classList.toggle('cur',i===curIdx);
     });
-    tl.innerHTML=h;
+    st.textContent=ev[curIdx].state;
   }
-  function fmt(m){var t=Math.round(m*60);var mm=Math.floor(t/60),ss=t%60;return mm+':'+(ss<10?'0':'')+ss;}
-  function upd(){
-    var m=+rng.value;clk.textContent='T+'+fmt(m);
-    var gap=document.getElementById('dnsGap');if(gap)gap.style.width=pct(m)+'%';
-    var s='external DNS response';
-    if(m>=164){s='killed by hand — 2.5h after detection';gap.style.background='var(--ok-soft)';}
-    else if(m>=14.7){s='acknowledged — still running';gap.style.background='var(--danger-soft)';}
-    else if(m>=11.8){s='P0 alert fired';gap.style.background='var(--danger-soft)';}
-    st.textContent=s;
+  function val(){return (+rng.value)/10;} // range 0..1640 -> 0..164.0 min
+
+  // playback: compress 164 real minutes into ~7s, but hold a beat on the
+  // tight detection window so the viewer can see it before the long wait.
+  var raf=null,playing=false,t0=0;
+  var DUR=7000;
+  function stop(){playing=false;play.textContent='▶ Play';if(raf)cancelAnimationFrame(raf);raf=null;}
+  function start(){
+    if(val()>=MAX-0.05){rng.value=0;}
+    playing=true;play.textContent='⏸ Pause';
+    var m=val(),p=m<=20?(m/20)*0.5:0.5+((m-20)/(MAX-20))*0.5; // inverse of tick mapping
+    t0=performance.now()-p*DUR;
+    tick();
   }
-  build();rng.addEventListener('input',upd);upd();
+  function tick(){
+    if(!playing)return;
+    var p=(performance.now()-t0)/DUR; // 0..1 linear in wall time
+    if(p>=1){rng.value=MAX*10;render(MAX);stop();return;}
+    // first half of playback covers the 0-20 min detection window, second
+    // half covers the long 20-164 min wait — so both phases are watchable.
+    var mins=p<0.5 ? (p/0.5)*20 : 20+((p-0.5)/0.5)*(MAX-20);
+    rng.value=Math.round(mins*10);render(mins);
+    raf=requestAnimationFrame(tick);
+  }
+  play.addEventListener('click',function(){playing?stop():start();});
+  rng.addEventListener('input',function(){if(playing)stop();render(val());});
+  render(0);
 })();
 
 /* ================= 02 · containment stack ================= */
