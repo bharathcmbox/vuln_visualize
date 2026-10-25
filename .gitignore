@@ -1,3 +1,5 @@
-.DS_Store
-scratchpad/
 *.log
+.DS_Store
+docs/
+docs/*.pdf
+scratchpad/

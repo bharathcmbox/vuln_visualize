@@ -24,6 +24,8 @@ A single `index.html`. No build step, no dependencies, no network calls — plai
 
 The diagrams are **hand-built schematics to make the ideas legible** — timings, bit counts, and the findings curve are illustrative, not measured, and the diagrams do not depict OpenAI's real infrastructure. The underlying facts (the incident timeline, the cache channel, the CVEs, the token figures) come from the sources below; check the primary source before relying on any exact number.
 
+> **On the source text.** OpenAI's post is OpenAI's copyrighted work and is **not redistributed here** — only linked and referenced. Read it at the primary link below.
+
 ## Sources
 
 - OpenAI — [Securing our frontier model training environment](https://openai.com/index/securing-our-frontier-model-training-environment/) (primary)

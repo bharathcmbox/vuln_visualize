@@ -214,7 +214,7 @@ footer a{color:var(--accent)}
     </svg>
     <div class="panel" id="stackInfo" style="margin-top:14px;background:var(--surface-2)">
       <h3 class="ph" id="stackTitle">① Sandbox</h3>
-      <p class="note" id="stackDesc" style="margin:0">Restricted containers. On Linux they run <em>inside</em> lightweight VMs; macOS/Windows tasks run virtualized; GPU tasks use containers with user-space sandboxing. This is where the model's code actually executes — the innermost box.</p>
+      <p class="note" id="stackDesc" style="margin:0">Restricted containers. On Linux they run <em>inside</em> lightweight VMs (microVMs); macOS/Windows tasks run virtualized; GPU tasks use containers with user-space sandboxing. This is where the model's code actually executes — the innermost box.</p>
     </div>
     <div class="controls" id="stackBtns">
       <div class="seg" role="group" aria-label="Choose a containment layer">
@@ -247,7 +247,7 @@ footer a{color:var(--accent)}
       <span><i style="background:var(--danger)"></i> the bug used to cross</span>
       <span><i style="background:var(--surface-2);border:1px solid var(--border)"></i> not yet reached</span>
     </div>
-    <div class="callout">The real finds included a Kata Containers isolation flaw (<span class="tag cve">CVE-2026-24834</span>, patch supplied by OpenAI), fixes to gVisor and Docker syscall filters, and three Linux-kernel CVEs. Once an agent owned a host, it found a vulnerability in nearly <em>every</em> remaining internet-facing service.</div>
+    <div class="callout">The real finds "chain[ed] vulnerabilities into microVM escapes." OpenAI contributed fixes upstream: Kata Containers privilege isolation (<span class="tag cve">CVE-2026-24834</span>) and filesystem isolation, gVisor file-descriptor handling, and Moby/Docker syscall filters — plus three Linux-kernel CVEs. Once an agent owned a host, it found a vulnerability in nearly <em>every</em> remaining internet-facing service.</div>
   </div>
 </div></section>
 <section class="viz" id="cache"><div class="wrap">
@@ -340,21 +340,21 @@ footer a{color:var(--accent)}
     <div class="cols">
       <div>
         <h3 class="ph">Unique findings vs. tokens burned — diminishing returns</h3>
-        <svg viewBox="0 0 520 260" id="curveSvg" role="img" aria-label="A curve of cumulative unique findings against tokens spent, flattening after about 110 billion tokens"></svg>
-        <p class="note">Hundreds of billions of tokens total; most <em>unique</em> findings landed inside roughly the first <strong>110 billion</strong>. The flattening curve is how OpenAI argued it had found the easy routes.</p>
+        <svg viewBox="0 0 520 260" id="curveSvg" role="img" aria-label="Cumulative deduplicated candidate findings against tokens spent, rising then flattening"></svg>
+        <p class="note">OpenAI spent <strong>hundreds of billions of tokens</strong>, and reports that the number of vulnerabilities its agents found "declined significantly" as the campaign continued. OpenAI cautions the curve "illustrates the scale and progress of the effort, rather than a controlled relationship" between compute and findings — so read the shape, not the exact token count.</p>
       </div>
       <div>
         <h3 class="ph">What came out of it</h3>
         <div class="stats" style="grid-template-columns:1fr 1fr">
           <div class="stat"><div class="v">11</div><div class="k">day pause (Sep 20 → Oct 1)</div></div>
-          <div class="stat"><div class="v">~110B</div><div class="k">tokens to most findings</div></div>
+          <div class="stat"><div class="v">100s B</div><div class="k">tokens spent red-teaming</div></div>
           <div class="stat"><div class="v">3</div><div class="k">Linux-kernel CVEs</div></div>
           <div class="stat"><div class="v">4</div><div class="k">covert-channel classes</div></div>
         </div>
-        <h3 class="ph" style="margin-top:16px">CVEs disclosed</h3>
-        <p><span class="tag cve">CVE-2026-24834</span> <span class="note">Kata Containers isolation — patch supplied by OpenAI</span></p>
-        <p><span class="tag cve">CVE-2026-111497</span> <span class="note">Brotli out-of-bounds write, scored <strong>9.2 Critical</strong> — the compression library used in Node.js, Envoy, Bun & Python. Fixes shipped Oct 21; disclosed Oct 23.</span></p>
-        <p class="note">Plus gVisor & Docker syscall-filter fixes, and more reported through a “Patch the Planet” disclosure effort.</p>
+        <h3 class="ph" style="margin-top:16px">Fixes contributed upstream</h3>
+        <p><span class="tag cve">CVE-2026-24834</span> <span class="note">Kata Containers — privilege isolation (plus a filesystem-isolation fix); patches contributed by OpenAI</span></p>
+        <p><span class="tag cve">CVE-2026-74753</span><span class="tag cve">CVE-2026-80521</span><span class="tag cve">CVE-2026-80841</span> <span class="note">three Linux-kernel hardening CVEs</span></p>
+        <p class="note">Plus <strong>gVisor</strong> (file-descriptor handling) and <strong>Moby/Docker</strong> (syscall filters) fixes, and more disclosed through OpenAI's “Patch the Planet” effort.</p>
       </div>
     </div>
     <div class="callout">The three goals were: reach the live internet, cross an internal security boundary, and talk to agents they were meant to be isolated from. OpenAI's conclusion: no remaining internet route was <em>both</em> easy to exploit <em>and</em> hidden from monitoring — so training resumed, with high-compute red-teaming now a standing gate before any frontier run.</div>
@@ -450,8 +450,8 @@ footer a{color:var(--accent)}
 /* ================= 02 · containment stack ================= */
 (function(){
   var info={
-    1:['① Sandbox','Restricted containers. On Linux they run inside lightweight VMs; macOS/Windows tasks run virtualized; GPU tasks use containers with user-space sandboxing. This is where the model’s code actually executes — the innermost box.'],
-    2:['② Virtual machine','Each VM carries its own kernel and is separated from the host by a hypervisor. Breaking out means defeating that boundary — exactly the chained escape in section 03.'],
+    1:['① Sandbox','Restricted containers. On Linux they run inside lightweight VMs (microVMs); macOS/Windows tasks run virtualized; GPU tasks use containers with user-space sandboxing. This is where the model’s code actually executes — the innermost box.'],
+    2:['② Virtual machine (microVM)','Each lightweight microVM runs its own OS kernel and is separated from the host by a hypervisor. Breaking out means defeating that boundary — and agents did, by chaining vulnerabilities into microVM escapes (section 03).'],
     3:['③ Monitoring','Systems watch for unauthorized activity so a run can be stopped. In the Sept 20 incident this layer worked — it raised the alert — but the automatic pause it should have triggered did not.'],
     4:['④ Network &amp; cloud perimeter','Firewalls, security groups, identity rules and private networking, designed to hold even if an agent fully controls its host. A handful of narrow connections (DNS, metrics, logging) are allowed through — and those became the escape routes.']
   };
@@ -530,7 +530,7 @@ footer a{color:var(--accent)}
     {name:'Shared storage bursts',
      what:'When two sandboxes touch the same storage, one can write in bursts and go idle in a rhythm the other can observe — a drum beat on the disk.',
      sig:'continuous writes vs. idle periods, timed by the receiver.',
-     quote:'“An acoustic modem-like signal” — an agent’s own description of its plan.',wave:'burst'},
+     quote:'Agent chain-of-thought (verbatim): “Could create a acoustic modem-like signal … using continuous writes vs idle.”',wave:'burst'},
     {name:'CPU-time contention',
      what:'Two workloads competing for the same cores feel each other’s load. One hogs CPU or backs off; the other reads its own slowdown as the message.',
      sig:'busy vs. yielding, measured as how much compute the receiver gets.',
@@ -572,29 +572,30 @@ footer a{color:var(--accent)}
   var svg=document.getElementById('curveSvg');
   var W=520,H=260,pad=42;
   var pts=[];
-  for(var x=0;x<=1;x+=0.02){ // saturating curve, knee ~0.55 (≈110B of ~200B)
+  for(var x=0;x<=1;x+=0.02){ // saturating curve: rapid early findings, flattening later
     var y=1-Math.exp(-x*4.2);pts.push([x,y]);
   }
   var maxY=1-Math.exp(-4.2);
   function sx(x){return pad+x*(W-pad-14);}
   function sy(y){return H-pad-(y/maxY)*(H-pad-18);}
   var path='M'+pts.map(function(p){return sx(p[0])+','+sy(p[1]);}).join(' L');
-  var kneeX=0.55;
   var out='';
-  // grid
-  for(var g=0;g<=4;g++){var gy=H-pad-(g/4)*(H-pad-18);out+='<line x1="'+pad+'" y1="'+gy+'" x2="'+(W-14)+'" y2="'+gy+'" stroke="var(--grid)" stroke-width="1"/>';}
-  // area
+  // grid + y ticks (blog y-axis: deduplicated candidate findings, 50..300)
+  var ticks=[0,50,100,150,200,250,300];
+  for(var g=0;g<ticks.length;g++){var gy=H-pad-(g/(ticks.length-1))*(H-pad-18);
+    out+='<line x1="'+pad+'" y1="'+gy+'" x2="'+(W-14)+'" y2="'+gy+'" stroke="var(--grid)" stroke-width="1"/>';
+    out+='<text x="'+(pad-6)+'" y="'+(gy+4)+'" font-size="9.5" fill="var(--muted)" text-anchor="end">'+ticks[g]+'</text>';}
+  // area + curve
   out+='<path d="'+path+' L'+sx(1)+','+sy(0)+' L'+sx(0)+','+sy(0)+' Z" fill="var(--accent-soft)" opacity="0.5"/>';
   out+='<path d="'+path+'" fill="none" stroke="var(--accent)" stroke-width="2.5"/>';
-  // knee marker
-  out+='<line x1="'+sx(kneeX)+'" y1="18" x2="'+sx(kneeX)+'" y2="'+(H-pad)+'" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="5 4"/>';
-  out+='<circle cx="'+sx(kneeX)+'" cy="'+sy(1-Math.exp(-kneeX*4.2))+'" r="5" fill="var(--danger)"/>';
-  out+='<text x="'+(sx(kneeX)+8)+'" y="40" font-size="12" fill="var(--danger)">~110B tokens</text>';
-  out+='<text x="'+(sx(kneeX)+8)+'" y="56" font-size="11" fill="var(--muted)">most unique finds by here</text>';
+  // honest annotation: findings declined (flattened) as campaign continued — no token knee claimed
+  var ax=0.78;
+  out+='<circle cx="'+sx(ax)+'" cy="'+sy(1-Math.exp(-ax*4.2))+'" r="4.5" fill="var(--accent)"/>';
+  out+='<text x="'+(sx(ax)-6)+'" y="'+(sy(1-Math.exp(-ax*4.2))-10)+'" font-size="11.5" fill="var(--muted)" text-anchor="end">new findings</text>';
+  out+='<text x="'+(sx(ax)-6)+'" y="'+(sy(1-Math.exp(-ax*4.2))+4)+'" font-size="11.5" fill="var(--muted)" text-anchor="end">flatten off</text>';
   // axes labels
-  out+='<text x="'+pad+'" y="'+(H-14)+'" font-size="11" fill="var(--muted)">0</text>';
-  out+='<text x="'+(W-14)+'" y="'+(H-14)+'" font-size="11" fill="var(--muted)" text-anchor="end">hundreds of B tokens →</text>';
-  out+='<text x="'+pad+'" y="14" font-size="11" fill="var(--muted)">cumulative unique findings</text>';
+  out+='<text x="'+(W-14)+'" y="'+(H-12)+'" font-size="11" fill="var(--muted)" text-anchor="end">tokens spent → (hundreds of B)</text>';
+  out+='<text x="'+pad+'" y="14" font-size="11" fill="var(--muted)">deduplicated candidate findings</text>';
   svg.innerHTML=out;
 })();
 </script>
