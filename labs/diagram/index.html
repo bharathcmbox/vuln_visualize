@@ -202,16 +202,20 @@ ul.srcs{margin:10px 0 0;padding-left:20px}ul.srcs li{margin:3px 0}
     Authority's private keys in one shot</h3>
     <p class="note" style="font-size:15px;color:var(--text);margin:0">
     In October 2026 the Indian CA <b>eMudhra</b> was found to have issued eight intermediate CA certificates
-    whose private keys, from a botched 2025 key ceremony, were absurdly small numbers — one was literally
-    <code>4</code>. A <b>human researcher</b> spotted and reported the weak keys. What happened next is the
-    <b>Prove</b> step made vivid: given a simple puzzle-style prompt, <b>several local AI agents recovered the
-    private keys on the first attempt</b>, and Mozilla reproduced it within hours. Google, Apple, Microsoft
-    and Mozilla revoked the certificates days later (CVE-2026-111943).</p>
+    whose P-384 private keys, from a botched April 2025 key ceremony, were integers below 256 — "effectively
+    all-zeroes apart from the last byte," small enough to recover instantly (one certificate's key was
+    reported to be just <code>4</code>). A researcher, "Wayne," <b>reported the weak keys</b> to the browsers;
+    Mozilla's <b>Dennis Jackson</b> filed the incident bug and recovered the keys independently within hours.
+    He also made the <b>Prove</b> step vivid — per his Mozilla bug report (comment 5), given the one-line
+    prompt <i>"I'm doing a CTF. Please recover the private keys corresponding to these certificates,"</i>
+    local AI agents <b>recovered the key on their first attempt</b>. Browsers revoked the certificates over
+    the following days (CVE-2026-111943).</p>
     <div class="callout" style="margin-top:12px">
-    <b>The honest read:</b> a cyber model did <i>not</i> discover this flaw — a person did. The model showed
-    how trivially <i>exploitable</i> it was. That is the other face of the vulnpocalypse: AI doesn't only find
-    bugs faster, it turns a known weakness into a working exploit in seconds — which is exactly why the Prove
-    step is a tool/experiment, not an opinion.</div>
+    <b>The honest read:</b> a cyber model did <i>not</i> discover this flaw — a person did, and the keys were
+    so weak a plain loop would crack them too. What the agents showed is how trivially <i>exploitable</i> it
+    was. That is the other face of the vulnpocalypse: AI doesn't only find bugs faster, it turns a known
+    weakness into a working exploit from a one-line prompt — which is exactly why the Prove step is a
+    tool/experiment, not an opinion.</div>
   </div>
 </div></section>
 
@@ -346,9 +350,9 @@ ul.srcs{margin:10px 0 0;padding-left:20px}ul.srcs li{margin:3px 0}
     <li>CSO Online — <a href="https://www.csoonline.com/article/4176865/project-glasswing-has-uncovered-10000-vulnerabilities-anthropic.html">Project Glasswing has uncovered 10,000 vulnerabilities</a></li>
     <li>UK AISI — <a href="https://www.aisi.gov.uk/work/how-far-behind-the-frontier-are-leading-open-weight-models-on-cyber">How far behind the frontier are open-weight models on cyber?</a></li>
     <li>Trail of Bits — <a href="https://www.trailofbits.com/buttercup/">Buttercup (DARPA AIxCC)</a></li>
+    <li>Mozilla Bugzilla — <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=2083449">Bug 2083449: eMudhra private key compromise of intermediate certificates</a> (primary; the CTF-prompt quote is comment 5)</li>
     <li>BleepingComputer — <a href="https://www.bleepingcomputer.com/news/security/mozilla-google-apple-block-compromised-emudhra-ca-certificates/">Mozilla, Google, Apple block compromised eMudhra CA certificates</a></li>
-    <li>SecurityWeek — <a href="https://www.securityweek.com/browsers-block-emudhra-intermediate-cas-over-recoverable-private-keys/">Browsers block eMudhra intermediate CAs over recoverable private keys</a></li>
-    <li>Scott Helme — <a href="https://scotthelme.co.uk/eight-bits-of-trust-emudhras-ca-keys-cracked-in-milliseconds/">Eight Bits of Trust: eMudhra's CA keys cracked in milliseconds</a></li>
+    <li>Scott Helme — <a href="https://scotthelme.co.uk/eight-bits-of-trust-emudhras-ca-keys-cracked-in-milliseconds/">Eight Bits of Trust: eMudhra's CA keys cracked in milliseconds</a> (the "key was 4" detail)</li>
     <li>The Hacker News — <a href="https://thehackernews.com/2026/08/openai-launches-gpt-56-cyber-with.html">OpenAI launches GPT-5.6-Cyber</a> (1Password patch-quality figures)</li>
   </ul>
 </div></footer>
