@@ -13,7 +13,7 @@ vulnerabilities — and why **remediation, not discovery, is now the bottleneck.
 security teams.
 
 - **Interactive diagram** → https://bharathcmbox.github.io/vuln_visualize/labs/diagram/
-- **Blog post** → https://bharathcmbox.github.io/vuln_visualize/blog/
+- **Blog post** → https://bharathcmbox.github.io/vuln_visualize/blog/ ([Markdown version](blog/vulnpocalypse.md))
 - **Runnable labs** (run the find → patch → verify loop yourself, locally) → [`labs/`](labs/):
   - `lab1-web-vpatch` — WAF-style virtual patching on OWASP Juice Shop
   - `lab2-native-libpng` — native-code sanitizer-as-judge, plus a PNG input-filter virtual patch
