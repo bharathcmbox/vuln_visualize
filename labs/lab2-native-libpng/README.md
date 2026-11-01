@@ -67,15 +67,38 @@ Two lessons for enterprise teams:
 2. The model reasoned about the defect rather than memorizing the known patch —
    evidence the capability is real, not recall.
 
-## Native-code "virtual patching"
+## Native-code "virtual patching" (implemented)
 
-You cannot put a WAF in front of a PNG decoder, so the interim-mitigation
-options differ from Lab 1 and are worth discussing with teams:
+You cannot put a WAF in front of a PNG decoder, so the interim mitigation is an
+**input filter at the boundary** — a positive-model parser that validates the
+PNG chunk structure and refuses malformed input before libpng ever sees it. This
+is the native-code mirror of Lab 1's WAF rule.
 
-- **Input filtering at the boundary**: reject or size-cap `iCCP` chunks before
-  the decoder runs (a positive model on the file format).
-- **Sandboxing / seccomp**: contain the process so an over-read cannot escalate
-  (this is exactly the microVM/containment theme from the main visualizer).
-- **Feature disable**: refuse ICC profiles until the real fix ships.
+```bash
+python3 -I validate_vpatch.py        # the two-sided gate
+python3 -I vpatch_filter.py [--mode strict|no-iccp] <file.png>
+```
 
-These contain the blast radius; only the code patch removes the bug.
+`validate_vpatch.py` runs the same gate shape as Lab 1:
+
+- **malicious PoC must be DENIED** — the over-read input never reaches libpng
+- **every benign PNG must be ALLOWED** — libpng's own `contrib/pngsuite/*.png`
+  (51 images) as the no-false-positives corpus
+
+Result (strict mode): PoC **DENIED**, 51/51 benign **ALLOWED**, gate **PASS**.
+The PoC is caught by one structural rule — *a chunk cannot be larger than the
+bytes that remain* — because it declares an 837 MB `iCCP` chunk inside a
+~420-byte file. A targeted iCCP-keyword rule adds defence in depth, and
+`--mode no-iccp` is the feature-disable fallback (refuse ICC profiles entirely).
+
+Other containment layers worth discussing with teams (not implemented here):
+
+- **Sandboxing / seccomp**: run the decoder in a restricted subprocess so an
+  over-read cannot escalate to code execution — the microVM/containment theme
+  from the main visualizer. (seccomp limits *syscalls*, so it contains the blast
+  radius of an exploit; it does not stop the over-read itself — that is what the
+  input filter is for.)
+
+All of these contain the blast radius or the trigger; only the code patch
+(above) removes the bug. Like any virtual patch, the filter is a bandage with an
+expiry date — remove it once the fix ships.
