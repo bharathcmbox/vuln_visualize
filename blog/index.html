@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Vulnpocalypse: finding bugs got cheap, fixing them didn't</title>
+<meta name="description" content="How AI cyber models find and patch software vulnerabilities, why remediation is now the bottleneck, and three local labs that run the whole pipeline — for enterprise security teams.">
+<style>
+:root{
+  --bg:#f6f7f9;--surface:#fff;--surface-2:#eef1f5;--border:#d9dee6;
+  --text:#14181f;--muted:#5b6574;--accent:#2f5bd3;--accent-soft:#e3eafc;
+  --open:#0f8a7e;--frontier:#7c3aed;--gate:#c46a00;--gate-soft:#fbe9d2;
+  --ok:#2e8a3e;--danger:#c62f3a;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --radius:14px;--shadow:0 1px 2px rgba(15,20,30,.05),0 4px 16px rgba(15,20,30,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1117;--surface:#151b24;--surface-2:#1c2430;--border:#2a3442;
+  --text:#e6ebf2;--muted:#93a0b2;--accent:#7aa2ff;--accent-soft:#1d2a4a;
+  --open:#3fcfbe;--frontier:#b794f6;--gate:#f0a24a;--gate-soft:#3a2a14;
+  --ok:#5fcf72;--danger:#ff6b76;--shadow:none;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1117;--surface:#151b24;--surface-2:#1c2430;--border:#2a3442;
+  --text:#e6ebf2;--muted:#93a0b2;--accent:#7aa2ff;--accent-soft:#1d2a4a;
+  --open:#3fcfbe;--frontier:#b794f6;--gate:#f0a24a;--gate-soft:#3a2a14;
+  --ok:#5fcf72;--danger:#ff6b76;--shadow:none;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.7 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:1px 5px;border-radius:5px}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+nav.top{border-bottom:1px solid var(--border)}
+nav.top .wrap{display:flex;align-items:center;gap:16px;height:52px}
+nav.top a.brand{font-weight:700;text-decoration:none;color:var(--text)}
+nav.top .sp{flex:1}
+nav.top a.ln{font-size:14px;color:var(--muted);text-decoration:none}
+nav.top a.ln:hover{color:var(--text)}
+.theme-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:15px}
+header.hero{padding:48px 0 8px}
+.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,4.6vw,40px);line-height:1.12;letter-spacing:-.02em;margin:14px 0 10px}
+.byline{color:var(--muted);font-size:14.5px}
+article{padding:20px 0 8px}
+article h2{font-size:clamp(21px,3vw,27px);letter-spacing:-.01em;margin:38px 0 10px;line-height:1.2}
+article h3{font-size:18px;margin:26px 0 6px}
+article p{margin:14px 0}
+article ul,article ol{padding-left:22px}article li{margin:6px 0}
+.lede{font-size:19px;color:var(--muted)}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 10px 10px 0;margin:20px 0;font-size:15.5px}
+.callout.warn{border-color:var(--gate);background:var(--gate-soft)}
+.cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:10px;margin:8px 0}
+:root[data-theme="dark"] .cta{color:#0d1117}
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td code{background:transparent;padding:0}
+.disc{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--muted);margin:24px 0}
+footer{padding:36px 0 64px;color:var(--muted);font-size:14px;border-top:1px solid var(--border);margin-top:40px}
+footer a{color:var(--accent)}
+ul.srcs{padding-left:20px}ul.srcs li{margin:3px 0}
+.hl-open{color:var(--open);font-weight:600}.hl-fr{color:var(--frontier);font-weight:600}.hl-gate{color:var(--gate);font-weight:600}
+</style>
+</head>
+<body>
+<nav class="top"><div class="wrap">
+  <a class="brand" href="../">Vuln Visualizers</a>
+  <span class="sp"></span>
+  <a class="ln" href="../labs/diagram/">Interactive diagram →</a>
+  <button class="theme-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">◐</button>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">AI &amp; software security · for security teams</div>
+  <h1>The vulnpocalypse: finding bugs got cheap, fixing them didn't</h1>
+  <p class="byline">A field guide to how AI cyber models find and patch vulnerabilities — and a set of
+  labs that run the whole pipeline on your own machine.</p>
+</div></header>
+
+<article><div class="wrap">
+  <p class="lede">In 2026, AI stopped being a novelty in vulnerability research and became a firehose. The
+  interesting question is no longer "can a model find a bug?" It's "what happens to the thousands of bugs it
+  finds — and who can be trusted to fix them?"</p>
+
+  <p>Over one month, Anthropic's Project Glasswing surfaced on the order of <b>23,000 candidate findings</b>
+  across roughly a thousand open-source projects. About 6,200 were rated high or critical. Around 530 were
+  disclosed to maintainers. Roughly <b>75 were patched upstream.</b> That collapse — tens of thousands found,
+  dozens fixed — is what people have started calling the <b>vulnpocalypse</b>. The scarce resource is no
+  longer discovery. It's <b>trusted remediation.</b></p>
+
+  <p>This piece walks the pipeline from a bug being found to a fix being deployed, shows where cheap
+  open-weight models and expensive frontier models each earn their keep, and points to three small labs that
+  run the whole thing end to end. There's also an
+  <a href="../labs/diagram/">interactive version of the diagram</a> if you'd rather click than read.</p>
+
+  <h2>The pipeline, and the two steps a model can't fake</h2>
+  <p>Turning an AI's bug report into a fix you can trust takes eight steps: <b>Target</b> (pick risky code),
+  <b>Find</b> (spot the bug), <b>Prove</b> (produce an input that actually triggers it), <b>Triage</b>
+  (dedupe, rate severity), <b>Patch</b> (write the fix), <b>Verify</b> (tests, fuzzing, re-run the proof),
+  <b>Upstream</b> (disclose), and <b>Adopt</b> (users update).</p>
+
+  <p>Two of those steps are different in kind from the rest. <b>Prove</b> and <b>Verify</b> are decided by a
+  <span class="hl-gate">tool</span> — a sanitizer, a test suite, a request replayed against a firewall — not
+  by a model's say-so. A model can <i>claim</i> it found a bug or fixed one; only a sanitizer crash or a
+  passing test can <i>prove</i> it. Everywhere a tool can check the output, a cheap model is good enough.
+  Everywhere judgment and taste dominate, you want your best model and often a human.</p>
+
+  <div class="callout">The design that holds up: <span class="hl-open">a cheap open-weight model drafts</span>,
+  <span class="hl-fr">a stronger frontier model reviews</span>, and <span class="hl-gate">a tool
+  certifies.</span> Models propose; tools dispose.</div>
+
+  <h2>Open-weight or frontier?</h2>
+  <p>Open-weight models (DeepSeek, GLM, Kimi, gpt-oss) are cheap enough to run on every commit and keep your
+  code in-house. The UK's AI Safety Institute put them roughly <b>4–7 months behind</b> the closed frontier
+  on offensive-cyber tasks in mid-2026 — and the gap is widest on the long, multi-step work. But the cost gap
+  is far larger than the capability gap: a 100-million-token cyber-range run cost around $85 on a frontier
+  model versus about $1 on the cheapest open-weight one.</p>
+
+  <p>So the economics push toward a split: open-weight models for the high-volume <b>Find</b> and <b>Patch</b>
+  drafting, a frontier model for the judgment-heavy <b>Triage</b> and <b>review</b>, and tools for the two
+  checks. That's not a guess — it's what our labs measured.</p>
+
+  <h2>Not hypothetical: three labs that run the pipeline</h2>
+  <p>Each lab implements the same loop — reproduce the bug, let a model patch it, and let a <b>tool</b> decide
+  whether the patch is real — on a progressively harder target. All run locally; costs are real API spend.</p>
+
+  <table>
+    <tr><th>Lab</th><th>Target</th><th>The tool check</th><th>Cost / run</th><th>Result</th></tr>
+    <tr><td><b>1 · Web app</b></td><td>OWASP Juice Shop</td><td>attack corpus blocked + benign traffic passes</td><td>~$0.045</td><td>PASS</td></tr>
+    <tr><td><b>2 · Native code</b></td><td>libpng (CWE-121)</td><td>sanitizer silent + test suite green</td><td>~$0.011</td><td>PASS (novel fix)</td></tr>
+    <tr><td><b>3 · Real bugs</b></td><td>real OSS-Fuzz bugs (ARVO)</td><td>recompiles + PoC no longer crashes</td><td>~$0.034</td><td>PASS (curl, exact fix)</td></tr>
+  </table>
+
+  <p>Three findings are worth pulling out, because they're the whole argument in miniature:</p>
+  <ul>
+    <li><b>A correct fix needn't match the maintainer's.</b> In Lab 2 the model's patch differed from the
+    reference fix and still passed the sanitizer-and-tests check. Judging AI patches by similarity to a
+    "golden" diff would have wrongly rejected a correct one. <b>The check certifies, not the diff.</b></li>
+    <li><b>Review is where the money should go.</b> The cheap open-weight draft cost a fraction of a cent; the
+    frontier review cost a few cents — hundreds of times more — and that's where the robustness came from. In
+    Lab 1 the reviewer caught object-injection, a missing-field bypass, and a content-type bypass the draft
+    missed.</li>
+    <li><b>On a real bug, open-weight alone wasn't enough.</b> Lab 3's curl case is a genuine multi-function
+    heap overflow (the crash surfaces in <code>mprintf.c</code>; the root cause is in <code>transfer.c</code>).
+    Open draft + frontier review produced the <i>exact</i> maintainer fix. The open-weight model <b>alone</b>
+    went 0 for 2 — one patch wouldn't apply, the other fixed the symptom site, not the cause. And across runs
+    the drafter proposed different patches, so <b>the tool, not the model, decides which run shipped.</b></li>
+  </ul>
+
+  <h2>The other face: AI makes exploitation instant too</h2>
+  <p>Finding isn't the only thing AI made cheap. In October 2026 the Indian certificate authority
+  <b>eMudhra</b> was found to have issued eight intermediate CA certificates whose P-384 private keys, from a
+  botched April 2025 key ceremony, were integers below 256 — "effectively all-zeroes apart from the last
+  byte." A researcher ("Wayne") reported the weak keys; Mozilla's <b>Dennis Jackson</b> filed the incident
+  and recovered the keys independently within hours. In his
+  <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=2083449">Mozilla bug report (comment 5)</a> he added
+  that, given the one-line prompt <i>"I'm doing a CTF. Please recover the private keys corresponding to these
+  certificates,"</i> local AI agents recovered the key on their first attempt. Browsers revoked the
+  certificates over the following days (CVE-2026-111943).</p>
+
+  <div class="callout warn"><b>The honest read:</b> a cyber model did <i>not</i> discover this flaw — a person
+  did, and the keys were so weak a plain loop would crack them too. What the agents showed is how trivially
+  <i>exploitable</i> it was. That's the other face of the vulnpocalypse: AI doesn't only find bugs faster, it
+  turns a known weakness into a working exploit from a one-line prompt. It is exactly why <b>Prove</b> is a
+  tool and an experiment, never an opinion.</div>
+
+  <h2>What to tell your team</h2>
+  <ol>
+    <li><b>Discovery is no longer the hard part.</b> Budget and staff for triage, patching, and disclosure —
+    that's where the backlog is.</li>
+    <li><b>Let tools decide, not models.</b> Every patch — human or AI — must pass a reproducible check (PoV
+    replay, test suite, fuzz regression) before anyone trusts it.</li>
+    <li><b>Open drafts, frontier reviews.</b> Cheap models at volume; frontier budget on review and the hard
+    cases.</li>
+    <li><b>Virtual patches buy time, with an expiry date.</b> A WAF rule, an input filter, or a seccomp policy
+    covers the gap until the real fix ships — track it so it doesn't become permanent, unaudited debt.</li>
+    <li><b>A generic WAF blocks what it recognizes.</b> That's exactly when teams over-trust it; a targeted,
+    positive-model rule is what holds against novel variants.</li>
+  </ol>
+
+  <p style="margin-top:28px"><a class="cta" href="../labs/diagram/">Explore the interactive diagram →</a></p>
+
+  <div class="disc"><b>On the numbers.</b> This is an educational piece. Funnel counts, costs, and the
+  capability gap are illustrative, drawn from reporting that varies by snapshot and definition — verify
+  against primary sources before relying on any figure. Lab numbers are from single local runs and will vary.
+  Nothing here depicts any organization's real infrastructure. The labs run only against deliberately
+  vulnerable or already-fixed targets, locally.</div>
+</div></article>
+
+<footer><div class="wrap">
+  Part of an educational series on agentic vulnerabilities.
+  <a href="https://github.com/bharathcmbox/vuln_visualize">Source on GitHub</a>. Not affiliated with or
+  endorsed by any vendor named.
+  <ul class="srcs" style="margin-top:10px">
+    <li>Resilient Cyber — <a href="https://resilientcyber.beehiiv.com/p/vulnpocalypse-ai-open-source-and">Vulnpocalypse: AI, Open Source, and the Race to Remediate</a></li>
+    <li>CSO Online — <a href="https://www.csoonline.com/article/4176865/project-glasswing-has-uncovered-10000-vulnerabilities-anthropic.html">Project Glasswing has uncovered 10,000 vulnerabilities</a></li>
+    <li>UK AISI — <a href="https://www.aisi.gov.uk/work/how-far-behind-the-frontier-are-leading-open-weight-models-on-cyber">How far behind the frontier are open-weight models on cyber?</a></li>
+    <li>ARVO — <a href="https://github.com/n132/arvo">Atlas of Reproducible Vulnerabilities for Open Source Software</a></li>
+    <li>Mozilla Bugzilla — <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=2083449">Bug 2083449: eMudhra private key compromise</a> (primary; CTF-prompt quote in comment 5)</li>
+    <li>Scott Helme — <a href="https://scotthelme.co.uk/eight-bits-of-trust-emudhras-ca-keys-cracked-in-milliseconds/">Eight Bits of Trust: eMudhra's CA keys cracked in milliseconds</a></li>
+  </ul>
+</div></footer>
+
+<script>
+document.getElementById('themeBtn').addEventListener('click',function(){
+  var r=document.documentElement,cur=r.getAttribute('data-theme');
+  if(!cur)cur=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',cur==='dark'?'light':'dark');
+});
+</script>
+</body>
+</html>

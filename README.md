@@ -4,6 +4,28 @@ An interactive, single-page visual explainer of the sandbox escapes and covert c
 
 **Live page:** https://bharathcmbox.github.io/vuln_visualize/
 
+---
+
+## New: The Vulnpocalypse Pipeline — how AI finds *and fixes* bugs
+
+A second explainer in the series, on how open-weight and frontier cyber models find and patch software
+vulnerabilities — and why **remediation, not discovery, is now the bottleneck.** Aimed at enterprise
+security teams.
+
+- **Interactive diagram** → https://bharathcmbox.github.io/vuln_visualize/labs/diagram/
+- **Blog post** → https://bharathcmbox.github.io/vuln_visualize/blog/
+- **Runnable labs** (run the find → patch → verify loop yourself, locally) → [`labs/`](labs/):
+  - `lab1-web-vpatch` — WAF-style virtual patching on OWASP Juice Shop
+  - `lab2-native-libpng` — native-code sanitizer-as-judge, plus a PNG input-filter virtual patch
+  - `lab3-arvo-realbugs` — real OSS-Fuzz bugs via [ARVO](https://github.com/n132/arvo), scored against the maintainer's fix
+
+The core idea: **a cheap open-weight model drafts, a frontier model reviews, and a tool — a sanitizer or a
+test — certifies.** Models propose; tools dispose.
+
+The rest of this README covers the original explainer, *Escaping the Offline World*.
+
+---
+
 ## What it covers
 
 Seven self-contained, interactive visualizers — no security background needed:
