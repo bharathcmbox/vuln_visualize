@@ -107,7 +107,8 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
 .labcard{border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--surface-2)}
 .labcard h4{margin:0 0 6px;font-size:15px}
 .labcard .kv{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0;border-bottom:1px dashed var(--border)}
@@ -137,17 +138,42 @@ ul.srcs{margin:10px 0 0;padding-left:20px}ul.srcs li{margin:3px 0}
   <h1>Finding bugs got cheap.<br>Fixing them didn't.</h1>
   <p class="lede">AI cyber models now surface vulnerabilities far faster than anyone can remediate them — the
   "vulnpocalypse." This walks the pipeline from discovery to a deployed fix, shows where open-weight and
-  frontier models each pull their weight, and marks the gates where a <b>tool</b>, not a model, decides what
-  is real. Numbers are illustrative; sources are listed at the end.</p>
+  frontier models each pull their weight, and marks the two steps where a <b>tool</b>, not a model, checks
+  the work. Numbers are illustrative; sources are listed at the end.</p>
 </div></header>
+
+<!-- WHAT THIS SHOWS (upfront framing) -->
+<section class="viz" style="padding-top:24px"><div class="wrap">
+  <div class="panel">
+    <h2 style="margin:0 0 8px;font-size:clamp(20px,3vw,26px);letter-spacing:-.02em">What this shows</h2>
+    <p style="margin:0 0 4px;font-size:16px;color:var(--text)">
+    Turning an AI's bug report into a fix you can trust takes eight steps. The affordable way to run them:
+    a <b style="color:var(--open)">cheap open-weight model drafts</b>, a
+    <b style="color:var(--frontier)">stronger frontier model reviews</b>, and a
+    <b style="color:var(--gate)">tool checks the result</b> — because a model can <i>claim</i> it fixed the
+    bug, but only a sanitizer or a test can <i>prove</i> it. We didn't just draw this; we built and ran it:</p>
+    <div class="grid3" style="margin-top:14px">
+      <div class="labcard"><h4>Lab 1 · Web app</h4><p class="note" style="margin:0">A model drafts a WAF-style
+        virtual patch; real requests check it. <b>Checked, passed.</b></p></div>
+      <div class="labcard"><h4>Lab 2 · Native code</h4><p class="note" style="margin:0">A libpng memory bug: the
+        model writes a C fix, a sanitizer + test suite check it (plus an input-filter virtual patch).
+        <b>Passed.</b></p></div>
+      <div class="labcard"><h4>Lab 3 · Real bugs</h4><p class="note" style="margin:0">Real OSS-Fuzz
+        vulnerabilities. On a live curl bug the draft-plus-review combo reproduced the maintainer's exact
+        fix. <b>Passed.</b></p></div>
+    </div>
+    <p class="note" style="margin:12px 0 0">Below: the eight steps, the two that a tool checks, and the gap
+    between bugs <i>found</i> and bugs <i>fixed</i>.</p>
+  </div>
+</div></section>
 
 <!-- 1. PIPELINE -->
 <section class="viz" id="pipeline"><div class="wrap">
   <div class="sec-head"><div class="sec-num">01</div>
-    <h2>The eight stages</h2>
-    <p>A finding travels left to right. Two stages are <b>hard gates</b> (locked): a proof-of-vulnerability
-    and a verified patch, each decided by a sanitizer or a test suite — not by a model's say-so. Use the
-    control to see who would run each stage.</p>
+    <h2>The eight steps</h2>
+    <p>A finding travels left to right. Two steps — <b>Prove</b> and <b>Verify</b> — are
+    <b>tool-checked</b> (marked ✓): a sanitizer or a test suite, not a model, decides whether the result is
+    real, so the model can't talk its way past them. Use the control to see who would run each step.</p>
   </div>
   <div class="panel">
     <div class="controls" style="margin-top:0">
@@ -162,7 +188,7 @@ ul.srcs{margin:10px 0 0;padding-left:20px}ul.srcs li{margin:3px 0}
     <div class="legend">
       <span><i style="background:var(--open)"></i>Open-weight model</span>
       <span><i style="background:var(--frontier)"></i>Frontier model</span>
-      <span><i style="background:var(--gate)"></i>Tool gate (ground truth)</span>
+      <span><i style="background:var(--gate)"></i>Tool-checked step (✓)</span>
       <span><i style="background:var(--muted)"></i>Human</span>
     </div>
     <div class="stats" id="pipeStats"></div>
@@ -175,7 +201,7 @@ ul.srcs{margin:10px 0 0;padding-left:20px}ul.srcs li{margin:3px 0}
   <div class="sec-head"><div class="sec-num">02</div>
     <h2>Where the findings go</h2>
     <p>One real-world snapshot: a month of AI-assisted discovery against ~1,000 open-source projects. Press
-    play and watch the cohort shrink at each gate. The gap between what is <i>found</i> and what is actually
+    play and watch the cohort shrink at each step. The gap between what is <i>found</i> and what is actually
     <i>patched</i> is the vulnpocalypse in one picture.</p>
   </div>
   <div class="panel">
@@ -231,32 +257,42 @@ ul.srcs{margin:10px 0 0;padding-left:20px}ul.srcs li{margin:3px 0}
 <section class="viz" id="labs"><div class="wrap">
   <div class="sec-head"><div class="sec-num">04</div>
     <h2>Not hypothetical — we ran it</h2>
-    <p>Two local labs implement this exact pipeline end to end, each with a real ground-truth gate. These are
-    the numbers behind the diagram.</p>
+    <p>Three local labs implement this exact pipeline end to end, each with a real tool check. These are the
+    numbers behind the diagram.</p>
   </div>
-  <div class="panel"><div class="grid2">
+  <div class="panel"><div class="grid3">
     <div class="labcard">
-      <h4>Lab 1 — Web (virtual patching)</h4>
+      <h4>Lab 1 — Web app</h4>
       <div class="kv"><span>Target</span><span>OWASP Juice Shop</span></div>
-      <div class="kv"><span>Prove gate</span><span>WAF request test</span></div>
+      <div class="kv"><span>Reproduce</span><span>WAF request test</span></div>
       <div class="kv"><span>Patch</span><span>ModSecurity rule</span></div>
-      <div class="kv"><span>Verify gate</span><span>corpus + benign</span></div>
+      <div class="kv"><span>Check</span><span>attacks + benign</span></div>
       <div class="kv"><span>Cost / run</span><span>~$0.045</span></div>
-      <div class="kv"><span>Result</span><span>gate PASS</span></div>
+      <div class="kv"><span>Result</span><span>PASS</span></div>
     </div>
     <div class="labcard">
-      <h4>Lab 2 — Native code (sanitizer-as-judge)</h4>
-      <div class="kv"><span>Target</span><span>example-libpng (CWE-121)</span></div>
-      <div class="kv"><span>Prove gate</span><span>ASan/UBSan abort</span></div>
+      <h4>Lab 2 — Native code</h4>
+      <div class="kv"><span>Target</span><span>libpng (CWE-121)</span></div>
+      <div class="kv"><span>Reproduce</span><span>ASan/UBSan abort</span></div>
       <div class="kv"><span>Patch</span><span>C diff</span></div>
-      <div class="kv"><span>Verify gate</span><span>no crash + test suite</span></div>
+      <div class="kv"><span>Check</span><span>no crash + tests</span></div>
       <div class="kv"><span>Cost / run</span><span>~$0.011</span></div>
-      <div class="kv"><span>Result</span><span>gate PASS (novel fix)</span></div>
+      <div class="kv"><span>Result</span><span>PASS (novel fix)</span></div>
+    </div>
+    <div class="labcard">
+      <h4>Lab 3 — Real bugs (ARVO)</h4>
+      <div class="kv"><span>Target</span><span>real OSS-Fuzz bugs</span></div>
+      <div class="kv"><span>Reproduce</span><span>sanitizer abort</span></div>
+      <div class="kv"><span>Patch</span><span>C diff</span></div>
+      <div class="kv"><span>Check</span><span>recompile + no crash</span></div>
+      <div class="kv"><span>Cost / run</span><span>~$0.034</span></div>
+      <div class="kv"><span>Result</span><span>PASS (curl, exact fix)</span></div>
     </div>
   </div>
   <div class="callout">In Lab 2 the model's fix <b>differed</b> from the maintainer's reference patch and still
-  passed the sanitizer + test gate. Judging AI patches by similarity to a "golden" fix would have wrongly
-  rejected a correct one — the gate certifies, not the diff.</div>
+  passed the sanitizer + test check. Judging AI patches by similarity to a "golden" fix would have wrongly
+  rejected a correct one — the <b>check</b> certifies, not the diff. And in Lab 3, the open-weight model
+  <b>alone</b> failed a real curl bug; it only became the correct fix after the frontier review.</div>
   </div>
 </div></section>
 
@@ -268,7 +304,7 @@ ul.srcs{margin:10px 0 0;padding-left:20px}ul.srcs li{margin:3px 0}
   <div class="panel">
     <ol style="margin:0;padding-left:22px;line-height:1.7">
       <li><b>Discovery is no longer the hard part.</b> Budget and staff for triage, patching, and disclosure.</li>
-      <li><b>Let tools decide, not models.</b> Every patch — human or AI — must pass a reproducible gate
+      <li><b>Let tools decide, not models.</b> Every patch — human or AI — must pass a reproducible check
       (PoV replay, test suite, fuzz regression) before anyone trusts it.</li>
       <li><b>Open drafts, frontier reviews.</b> Cheap models at volume; frontier budget on review and the
       hard cases.</li>
@@ -320,7 +356,7 @@ var STAGES=[
   {n:'Upstream',d:'disclose',           o:'human',    f:'human',    h:'human'},
   {n:'Adopt',   d:'users update',       o:'human',    f:'human',    h:'human'}
 ];
-var WHO={open:['who-open','open'],frontier:['who-frontier','frontier'],gate:['who-gate','tool gate'],human:['who-human','human']};
+var WHO={open:['who-open','open'],frontier:['who-frontier','frontier'],gate:['who-gate','tool checks ✓'],human:['who-human','human']};
 // illustrative relative cost per stage (open vs frontier), arbitrary units
 var COST={open:1,frontier:220,gate:0,human:0};
 var pipe=document.getElementById('pipe');
@@ -329,7 +365,7 @@ var pipeNote=document.getElementById('pipeNote');
 var NOTES={
   open:'Cheapest and fully in-house, but open-weight models trail the frontier on the long, subtle steps (Triage, review) — robustness suffers.',
   frontier:'Strongest per stage, but you pay frontier rates on the high-volume Find step, where most calls return nothing. Expensive at scale.',
-  hybrid:'Open-weight for the high-volume Find/Draft work, frontier for judgement-heavy Triage, tools for the gates. Best cost-to-robustness — the setup our labs used.'
+  hybrid:'Open-weight for the high-volume Find/Draft work, frontier for judgement-heavy Triage, tools for the two checks. Best cost-to-robustness — the setup our labs used.'
 };
 var mode='open';
 function renderPipe(){
@@ -342,7 +378,7 @@ function renderPipe(){
     var div=document.createElement('div');
     div.className='stage'+(s.gate?' gate':'');
     div.innerHTML='<div class="box">'+
-      (s.gate?'<div class="lock" title="A tool decides here, not a model">🔒</div>':'')+
+      (s.gate?'<div class="lock" title="A tool checks this step — a model cannot fake it">✓</div>':'')+
       '<div class="st-n">'+String(i+1).padStart(2,'0')+'</div>'+
       '<div class="st-name">'+s.n+'</div>'+
       '<div class="note" style="font-size:11.5px">'+s.d+'</div>'+
@@ -353,9 +389,9 @@ function renderPipe(){
   var frontierStages=STAGES.filter(function(s){return s[mode[0]==='o'?'o':mode[0]==='f'?'f':'h']==='frontier';}).length;
   var openStages=STAGES.filter(function(s){return s[mode[0]==='o'?'o':mode[0]==='f'?'f':'h']==='open';}).length;
   pipeStats.innerHTML=
-    '<div class="stat"><div class="v open">'+openStages+'</div><div class="k">stages on open-weight</div></div>'+
-    '<div class="stat"><div class="v frontier">'+frontierStages+'</div><div class="k">stages on frontier</div></div>'+
-    '<div class="stat"><div class="v">2</div><div class="k">tool gates (non-negotiable)</div></div>'+
+    '<div class="stat"><div class="v open">'+openStages+'</div><div class="k">steps on open-weight</div></div>'+
+    '<div class="stat"><div class="v frontier">'+frontierStages+'</div><div class="k">steps on frontier</div></div>'+
+    '<div class="stat"><div class="v">2</div><div class="k">tool-checked steps (✓)</div></div>'+
     '<div class="stat hl"><div class="v">'+relCost+'×</div><div class="k">relative model cost (illustrative)</div></div>';
   pipeNote.textContent=NOTES[mode];
 }
@@ -371,9 +407,9 @@ renderPipe();
 // ---- 2. funnel ----
 var FUN=[
   {lab:'Candidate findings',sub:'raw model output',v:23019,kind:''},
-  {lab:'High / critical',sub:'after triage gate',v:6202,kind:'',gate:'Prove + Triage gate: drop the noise'},
+  {lab:'High / critical',sub:'after triage',v:6202,kind:'',gate:'Reproduce & triage: drop the noise'},
   {lab:'Disclosed to maintainers',sub:'worth a human\'s time',v:530,kind:'drop',gate:'Human capacity: the real bottleneck'},
-  {lab:'Patched upstream',sub:'fix actually merged',v:75,kind:'win',gate:'Verify gate: a fix that holds'}
+  {lab:'Patched upstream',sub:'fix actually merged',v:75,kind:'win',gate:'Verify: a fix that actually holds'}
 ];
 var MAX=FUN[0].v;
 var rowsEl=document.getElementById('funnelRows');
