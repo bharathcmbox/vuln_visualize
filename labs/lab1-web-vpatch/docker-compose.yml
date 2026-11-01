@@ -1,0 +1,35 @@
+# Lab 1: a deliberately vulnerable app reached three ways, so you can compare
+# no protection, a generic WAF, and a targeted virtual patch.
+# Everything binds to 127.0.0.1 only. Do not expose these ports.
+services:
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    ports: ["127.0.0.1:3000:3000"]        # direct: no WAF
+
+  waf-generic:
+    image: owasp/modsecurity-crs:nginx-alpine
+    environment:
+      BACKEND: http://juice-shop:3000
+      BLOCKING_PARANOIA: "1"
+    ports: ["127.0.0.1:8080:8080"]        # OWASP CRS defaults only
+    depends_on: [juice-shop]
+
+  waf-vpatch:
+    image: owasp/modsecurity-crs:nginx-alpine
+    environment:
+      BACKEND: http://juice-shop:3000
+      BLOCKING_PARANOIA: "1"
+    volumes:
+      - ./vpatches:/opt/modsecurity/rules/before-crs:ro
+    ports: ["127.0.0.1:8081:8080"]        # CRS + targeted virtual patches
+    depends_on: [juice-shop]
+
+  waf-vpatch-gen:
+    image: owasp/modsecurity-crs:nginx-alpine
+    environment:
+      BACKEND: http://juice-shop:3000
+      BLOCKING_PARANOIA: "1"
+    volumes:
+      - ./vpatches-generated:/opt/modsecurity/rules/before-crs:ro
+    ports: ["127.0.0.1:8082:8080"]        # CRS + MODEL-generated virtual patch
+    depends_on: [juice-shop]

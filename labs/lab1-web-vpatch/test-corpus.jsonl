@@ -1,0 +1,15 @@
+# Labelled test corpus for the virtual-patch gate. One JSON object per line.
+# kind=malicious -> an auth-bypass attempt placed in the email field.
+# kind=benign    -> traffic a real user would send; must NOT be blocked.
+#
+# The malicious entries are grouped by EVASION CATEGORY rather than listed as a
+# payload cookbook: the point of the lab is that a generic signature WAF tends to
+# catch the "canonical" category but miss shape-variants, while a positive-model
+# virtual patch rejects every row here because none of them is email-shaped.
+{"kind":"malicious","label":"canonical tautology","body":{"email":"' OR 1=1--","password":"x"}}
+{"kind":"malicious","label":"comment-terminated variant","body":{"email":"admin'--","password":"x"}}
+{"kind":"malicious","label":"whitespace/case variant","body":{"email":"'/**/oR/**/'1'='1","password":"x"}}
+{"kind":"malicious","label":"boolean-shape variant","body":{"email":"x' OR 'a'='a","password":"x"}}
+{"kind":"benign","label":"valid email, wrong password","body":{"email":"jim@juice-sh.op","password":"not-the-password"}}
+{"kind":"benign","label":"valid email, plus-addressing","body":{"email":"user.name+test@example.co.uk","password":"whatever"}}
+{"kind":"benign","label":"valid email, numeric local part","body":{"email":"12345@test.org","password":"whatever"}}

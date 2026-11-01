@@ -1,0 +1,113 @@
+# AUTO-GENERATED virtual patch (lab). Drafter: deepseek/deepseek-v4-flash  Reviewer: anthropic/claude-sonnet-5.5
+# Judged by validate.py, not trusted on sight.
+# =============================================================================
+# VP-2026-001 - Virtual patch (ModSecurity v3 + OWASP CRS, nginx connector)
+# Route   : POST /rest/user/login   (JSON body: {"email": "...", "password": "..."})
+# Model   : positive security model on the JSON `email` field (ARGS:json.email)
+# Expiry  : REMOVE once the upstream fix (parameterized query / ORM binding) ships.
+# Needs   : SecRequestBodyAccess On (normally already set by modsecurity.conf)
+# Ids     : 1001000-1001004 (CRS local range 1,0xx,xxx)
+#
+# Notes:
+#  - Scope is a phase-1 marker rule that matches only POST and exactly this path.
+#    The path match is case-insensitive and tolerates one trailing slash because
+#    Express routing does the same by default. It is exact, so it does not match
+#    /rest/user/login-foo or other prefixes. Query strings are not part of
+#    REQUEST_FILENAME.
+#  - The same marker rule forces the JSON body processor on this route. Otherwise
+#    a client could send a different Content-Type, ARGS:json.email would never be
+#    populated, and the check would be bypassed.
+#  - The deny rules are separate, each fully chained to the route marker.
+#  - Valid email + any password passes. Passwords are never inspected here, so a
+#    wrong password still reaches the app.
+#  - Allowed shape: local part [A-Za-z0-9._%+-]{1,64}, a domain of dot-separated
+#    labels, an alphabetic TLD of 2-63 chars, total length <= 254. Anchors are
+#    \A and \z so a trailing newline cannot slip through. Quotes, spaces, and
+#    SQL metacharacters are not in the allowed set, so they are denied.
+# =============================================================================
+
+# --- 1. Route scope marker + force JSON body parsing (phase 1) ---------------
+SecRule REQUEST_METHOD "@streq POST" \
+    "id:1001000,\
+    phase:1,\
+    pass,\
+    nolog,\
+    t:none,\
+    msg:'VP-2026-001 route marker: POST /rest/user/login',\
+    tag:'virtual-patch',\
+    tag:'expiry-required',\
+    chain"
+    SecRule REQUEST_FILENAME "@rx (?i)^/rest/user/login/?$" \
+        "t:none,t:urlDecodeUni,t:normalizePath,\
+        setvar:'tx.vp_2026_001_route=1',\
+        ctl:requestBodyProcessor=JSON"
+
+# --- 2. Body must parse as JSON on this route (phase 2) ----------------------
+SecRule TX:VP_2026_001_ROUTE "@eq 1" \
+    "id:1001001,\
+    phase:2,\
+    deny,\
+    status:403,\
+    log,\
+    t:none,\
+    msg:'VP-2026-001: login body is not valid JSON',\
+    logdata:'REQBODY_ERROR_MSG: %{REQBODY_ERROR_MSG}',\
+    tag:'virtual-patch',\
+    tag:'expiry-required',\
+    tag:'platform-nginx',\
+    tag:'conf-owasp-crs',\
+    chain"
+    SecRule REQBODY_ERROR "!@eq 0" "t:none"
+
+# --- 3. Exactly one scalar `email` field must be present (phase 2) -----------
+# Denies a missing email, duplicate keys, and non-string values (arrays/objects
+# are flattened by the JSON processor into json.email.N / json.email.key).
+SecRule TX:VP_2026_001_ROUTE "@eq 1" \
+    "id:1001002,\
+    phase:2,\
+    deny,\
+    status:403,\
+    log,\
+    t:none,\
+    msg:'VP-2026-001: login email field missing or duplicated',\
+    tag:'virtual-patch',\
+    tag:'expiry-required',\
+    tag:'platform-nginx',\
+    tag:'conf-owasp-crs',\
+    chain"
+    SecRule &ARGS:json.email "!@eq 1" "t:none"
+
+SecRule TX:VP_2026_001_ROUTE "@eq 1" \
+    "id:1001003,\
+    phase:2,\
+    deny,\
+    status:403,\
+    log,\
+    t:none,\
+    msg:'VP-2026-001: login email field is not a plain string',\
+    logdata:'Offending arg name: %{MATCHED_VAR_NAME}',\
+    tag:'virtual-patch',\
+    tag:'expiry-required',\
+    tag:'platform-nginx',\
+    tag:'conf-owasp-crs',\
+    chain"
+    SecRule ARGS_NAMES "@rx (?i)^json\.email(?:\.|\[)" "t:none"
+
+# --- 4. Positive model: email must be email-shaped (phase 2) -----------------
+# The deny fires when the value does NOT match the allowed shape (negated @rx).
+SecRule TX:VP_2026_001_ROUTE "@eq 1" \
+    "id:1001004,\
+    phase:2,\
+    deny,\
+    status:403,\
+    log,\
+    t:none,\
+    msg:'VP-2026-001: login email does not conform to expected email format',\
+    logdata:'Rejected value of %{MATCHED_VAR_NAME} (length %{MATCHED_VAR_LENGTH})',\
+    tag:'virtual-patch',\
+    tag:'expiry-required',\
+    tag:'platform-nginx',\
+    tag:'conf-owasp-crs',\
+    chain"
+    SecRule ARGS:json.email "!@rx \A(?=.{3,254}\z)[A-Za-z0-9._%+-]{1,64}@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}\z" \
+        "t:none"
