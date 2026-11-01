@@ -1,0 +1,30 @@
+{
+  "source": "ARVO (n132/arvo) \u2014 real reproduced OSS-Fuzz bugs",
+  "note": "images pulled on demand by run.py; meta+good.diff vendored per case",
+  "cases": [
+    {
+      "id": 8000,
+      "project": "curl",
+      "sanitizer": "asan",
+      "crash_type": "Heap-buffer-overflow WRITE 1",
+      "severity": "High",
+      "tier": "baseline"
+    },
+    {
+      "id": 8007,
+      "project": "curl",
+      "sanitizer": "asan",
+      "crash_type": "Heap-buffer-overflow WRITE 1",
+      "severity": "High",
+      "tier": "baseline"
+    },
+    {
+      "id": 9540,
+      "project": "bloaty",
+      "sanitizer": "asan",
+      "crash_type": "Global-buffer-overflow READ 8",
+      "severity": null,
+      "tier": "baseline"
+    }
+  ]
+}
