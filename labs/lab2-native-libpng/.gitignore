@@ -2,3 +2,4 @@
 target/
 # Live model output is a per-run artifact; the .example is committed.
 generated/generated-patch.diff
+__pycache__/
