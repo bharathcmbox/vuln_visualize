@@ -1,0 +1,4 @@
+# The challenge target is fetched by setup.sh, not vendored (large clone).
+target/
+# Live model output is a per-run artifact; the .example is committed.
+generated/generated-patch.diff

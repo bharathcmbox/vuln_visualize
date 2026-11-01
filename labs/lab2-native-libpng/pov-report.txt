@@ -1,0 +1,9 @@
+Harness: libpng_read_fuzzer   Sanitizer: UBSan/ASan   Input: sample_data.bin
+libpng warning: iCCP: chunk data is too large
+pngrutil.c:1447:10: runtime error: index 41 out of bounds for type
+    'wpng_byte[max_keyword_wbytes]' (aka 'unsigned short[max_keyword_wbytes]')
+    #0 png_handle_iCCP  pngrutil.c:1447
+    #1 png_read_info    pngread.c:229
+CWE-121: out-of-bounds read/write caused by an improper use of sizeof in
+png_handle_iCCP (the read length is computed in bytes, then used as a
+wide-character element count).
